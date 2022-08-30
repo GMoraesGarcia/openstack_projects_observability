@@ -1,0 +1,20 @@
+version: '3'
+
+services:
+  thanos-sidecar-3:
+    image: quay.io/thanos/thanos:v0.27.0
+    volumes:
+      - ./thanos/:/etc/thanos/
+      - ./hashring.json:/data
+    command:
+      - 'receive'
+      - '--tsdb.path=/path/to/receive/data/dir/'
+      - '--grpc-address=0.0.0.0:10907'
+      - '--http-address=0.0.0.0:10909'
+      - '--receive.replication-factor=1'
+      - '--receive.local-endpoint=127.0.0.1:10907'
+      - '--receive.hashrings-file=/data/hashring.json'
+      - '--remote-write.address=0.0.0.0:10908'
+      - '--objstore.config-file=/etc/thanos/bucket.yaml'
+
+    restart: always

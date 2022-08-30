@@ -1,0 +1,8 @@
+type: SWIFT
+config:
+    auth_url: "https://identity.wse.zone/v3/"
+    username: "gmoraes"
+    password: "X%2%7Yq@NB3tCv3e"
+    project_id: 37c68a88eed54efea7245b395e34893a
+    domain_id: 4d767571168f4fd88aae8dc73a515a9e
+    container_name: "Thanos-teste-02"

@@ -1,0 +1,94 @@
+version: '3'
+networks:
+  monitor-net:
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yaml:/etc/prometheus/prometheus.yaml
+      - ./linux.json:/etc/prometheus/linux.json
+      - ./win.json:/etc/prometheus/win.json
+      - ./prometheus_db:/var/lib/prometheus
+      - ./prometheus_db:/prometheus
+      - ./prometheus_db:/etc/prometheus
+      - ./alert.rules:/etc/prometheus/alert.rules
+    command:
+      - '--enable-feature=expand-external-labels'
+      - '--config.file=/etc/prometheus/prometheus.yaml'
+      - '--web.route-prefix=/'
+      - '--storage.tsdb.max-block-duration=6h'
+      - '--storage.tsdb.min-block-duration=6h'
+      - '--storage.tsdb.retention.time=24h'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    user: root
+    ports:
+      - 9090:9090
+  thanos-sidecar:
+    image: quay.io/thanos/thanos:v0.27.0
+    volumes:
+      - ./Thanos/:/etc/thanos/
+      - ./prometheus_db:/prometheus
+    command:
+      - 'sidecar'
+      - '--tsdb.path=/prometheus/data'
+      - '--prometheus.url=http://prometheus:9090'
+      - '--grpc-address=0.0.0.0:10091'
+      - '--http-address=0.0.0.0:10902'
+      - '--objstore.config-file=/etc/thanos/bucket.yaml'
+    restart: always
+
+  thanos-querier:
+    image: quay.io/thanos/thanos:v0.27.0
+    command:
+      - 'query'
+      - '--grpc-address=0.0.0.0:10091'
+      - '--http-address=0.0.0.0:10902'
+      - '--query.replica-label=replica'
+      - '--store=thanos-sidecar:10091'
+      - '--store=thanos-store-gateway:10091'
+    ports:
+      - 10902:10902
+    depends_on:
+      - thanos-sidecar
+    restart: always
+  thanos-store-gateway:
+    image: quay.io/thanos/thanos:v0.27.0
+    volumes:
+      - ./Thanos/:/etc/thanos/
+    command:
+      - 'store'
+      - '--grpc-address=0.0.0.0:10091'
+      - '--http-address=0.0.0.0:10902'
+      - '--data-dir=/tmp/thanos/store'
+      - '--objstore.config-file=/etc/thanos/bucket.yaml'
+
+    restart: always
+  
+  node-exporter:
+    image: prom/node-exporter
+    ports:
+      - 9100:9100
+  cadvisor:
+    image: google/cadvisor:latest
+    ports:
+      - 8080:8080
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    volumes:
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources
+    environment:
+      - GF_SECURITY_ADMIN_USER=${ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    restart: unless-stopped
+    ports:
+      - 3000:3000

@@ -1,0 +1,14 @@
+version: '3'
+services:
+  thanos-sidecar-3:
+    image: quay.io/thanos/thanos:v0.27.0
+    volumes:
+      - ./thanos:/etc/thanos/
+      - ./prometheus_db:/prometheus
+    command:
+      - 'sidecar'
+      - '--tsdb.path=/prometheus/data'
+      - '--prometheus.url=http://45.225.25.239:9090'
+      - '--objstore.config-file=/etc/thanos/bucket.yaml'
+
+    restart: always

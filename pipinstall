@@ -1,0 +1,37 @@
+apt update
+
+cd /home/ubuntu
+
+git clone https://gmoraes_bc:glpat-9qBTfgjXxksz2QnFDpyM@gitlab.com/sre43/instances-monitoring.git
+
+
+mkdir observabilidade
+
+cd instances-monitoring
+
+mv win-exporter/windows_exporter-0.18.1-386.msi /home/ubuntu/observabilidade
+
+update key
+
+apt install python3-pip -y
+
+pip3 install --upgrade pip
+
+pip3 install wrapt_timeout_decorator
+
+pip3 install pypsrp
+
+pip3 install paramiko
+
+apt install docker-compose -y
+
+
+# infos que o cliente irá fornecer
+export ID=8283663189304c9b97c35da39e4c06f5
+export SECRET_KEY=bcservices#123
+export USERNAME=Administrator
+export PASSWORD=bcservices#123
+export CLUSTER_NAME=Project-testes-B\L
+export
+
+python3 prometheus_target_build.py
